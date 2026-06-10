@@ -1,59 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Send, Loader2, Sparkles } from 'lucide-react';
-import { extractActivitiesAction } from '../../services/gemini.service';
-import { useAppContext } from '../../context/AppContext';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 /**
  * ActivityLogger captures natural language daily activity logs, extracts data using Gemini, and logs activities.
  */
 export const ActivityLogger: React.FC = () => {
-  const [input, setInput] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [statusAnnouncement, setStatusAnnouncement] = useState<string>('');
-  const { addActivity } = useAppContext();
-
-  // Clear announcement after a few seconds
-  useEffect(() => {
-    if (statusAnnouncement) {
-      const timer = setTimeout(() => setStatusAnnouncement(''), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [statusAnnouncement]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    setIsProcessing(true);
-    setError(null);
-    setStatusAnnouncement("Analyzing activity description with AI...");
-    
-    try {
-      const extraction = await extractActivitiesAction(input);
-      
-      for (const act of extraction.activities) {
-        await addActivity({
-          description: act.description,
-          category: act.category,
-          carbonAmount: act.estimatedCarbon,
-          aiInsight: act.insight
-        });
-      }
-      
-      setInput('');
-      setStatusAnnouncement("Success! Activities successfully extracted and logged.");
-      
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : "Failed to process activity.";
-      setError(errMsg);
-      setStatusAnnouncement(`Error: ${errMsg}`);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  const {
+    input,
+    setInput,
+    isProcessing,
+    error,
+    statusAnnouncement,
+    handleSubmit
+  } = useActivityLogger();
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8" role="region" aria-label="AI Activity Input">

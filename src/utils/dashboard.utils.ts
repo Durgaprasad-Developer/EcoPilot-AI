@@ -3,6 +3,8 @@ import type { Activity } from '../types';
 
 /**
  * Calculates net carbon footprint for the current day (emissions minus offsets).
+ * @param activities List of tracked user activities.
+ * @returns The net carbon footprint amount for today.
  */
 export function calculateTotalToday(activities: Activity[]): number {
   const today = new Date();
@@ -13,6 +15,8 @@ export function calculateTotalToday(activities: Activity[]): number {
 
 /**
  * Calculates cumulative carbon savings from logged offset reductions.
+ * @param activities List of tracked user activities.
+ * @returns The sum total of all carbon saved.
  */
 export function calculateTotalSaved(activities: Activity[]): number {
   return activities
@@ -22,6 +26,8 @@ export function calculateTotalSaved(activities: Activity[]): number {
 
 /**
  * Aggregates net daily footprints for the last 7 days.
+ * @param activities List of tracked user activities.
+ * @returns 7-day chronological data points for rendering charts.
  */
 export function calculateWeeklyData(activities: Activity[]): Array<{ name: string; amount: number }> {
   const today = new Date();
@@ -39,6 +45,8 @@ export function calculateWeeklyData(activities: Activity[]): Array<{ name: strin
 
 /**
  * Groups carbon amounts by category for emissions analysis.
+ * @param activities List of tracked user activities.
+ * @returns Array of grouped category values sorted by descending footprint value.
  */
 export function calculateCategoryData(activities: Activity[]): Array<{ name: string; value: number }> {
   const categoryTotals = activities.reduce((acc, a) => {

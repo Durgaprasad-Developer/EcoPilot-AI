@@ -8,11 +8,11 @@ interface ActivitiesHistoryPanelProps {
 }
 
 const COLORS = {
-  transport: { text: '#0369a1', bg: '#e0f2fe' },
-  food: { text: '#b45309', bg: '#fef3c7' },
-  energy: { text: '#6d28d9', bg: '#ede9fe' },
-  shopping: { text: '#be185d', bg: '#fce7f3' },
-  other: { text: '#334155', bg: '#f1f5f9' }
+  transport: { text: 'text-sky-700', bg: 'bg-sky-100' },
+  food: { text: 'text-amber-800', bg: 'bg-amber-100' },
+  energy: { text: 'text-purple-700', bg: 'bg-purple-100' },
+  shopping: { text: 'text-pink-700', bg: 'bg-pink-100' },
+  other: { text: 'text-slate-700', bg: 'bg-slate-100' }
 };
 
 /**
@@ -39,8 +39,7 @@ export const ActivitiesHistoryPanel: React.FC<ActivitiesHistoryPanelProps> = ({ 
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1">
                     <span 
-                      className="px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize" 
-                      style={{ backgroundColor: theme.bg, color: theme.text }}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${theme.bg} ${theme.text}`}
                     >
                       {activity.category}
                     </span>
@@ -49,7 +48,7 @@ export const ActivitiesHistoryPanel: React.FC<ActivitiesHistoryPanelProps> = ({ 
                         Reduction
                       </span>
                     )}
-                    <span className="text-xs text-gray-400">{format(new Date(activity.date), 'MMM d, h:mm a')}</span>
+                    <span className="text-xs text-gray-500">{format(new Date(activity.date), 'MMM d, h:mm a')}</span>
                   </div>
                   <p className="text-gray-800 font-medium">{activity.description}</p>
                   {activity.aiInsight && (

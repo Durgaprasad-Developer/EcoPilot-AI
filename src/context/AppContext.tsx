@@ -48,15 +48,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const completeOnboarding = React.useCallback(async (name: string, goals: string[]) => {
-    if (!user) return;
-    const updatedUser = { ...user, name, goals };
-    await dbService.saveUser(updatedUser);
-    setUser(updatedUser);
-    
-    // Save to auth service as well since it uses localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ecopilot_current_user', JSON.stringify(updatedUser));
-    }
+     if (!user) return;
+     const updatedUser = { ...user, name, goals };
+     await dbService.saveUser(updatedUser);
+     setUser(updatedUser);
+     
+     // Save to auth service to keep the session configuration in sync
+     authService.saveUser(updatedUser);
   }, [user]);
 
   const addActivity = React.useCallback(async (activityData: Omit<Activity, 'id' | 'userId' | 'date'>) => {

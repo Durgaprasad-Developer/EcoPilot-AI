@@ -5,7 +5,8 @@ interface StatsPanelProps {
   totalSaved: number;
   assessment: {
     label: string;
-    color: string;
+    bgClass: string;
+    textClass: string;
   };
 }
 
@@ -22,7 +23,7 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({ totalToday, totalSaved, 
           <span className="text-5xl font-extrabold text-gray-900">{totalToday.toFixed(1)}</span>
           <span className="text-lg text-gray-500">kg CO₂e</span>
         </div>
-        <span className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 ${assessment.color}`}>
+        <span className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold ${assessment.bgClass} ${assessment.textClass}`}>
           {assessment.label}
         </span>
       </div>

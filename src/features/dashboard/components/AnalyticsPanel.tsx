@@ -75,7 +75,7 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ weeklyData, cate
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-gray-400 text-sm">No data yet. Log an activity!</p>
+            <p className="text-gray-500 text-sm">No data yet. Log an activity!</p>
           )}
         </div>
         

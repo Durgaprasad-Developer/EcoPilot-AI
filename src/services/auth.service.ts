@@ -43,6 +43,20 @@ export const authService = {
   },
   
   /**
+   * Saves or updates the user profile in persistent storage.
+   * @param user The UserProfile object to persist.
+   */
+  saveUser: (user: UserProfile): void => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+      } catch (e) {
+        console.warn("LocalStorage setItem failed in authService saveUser:", e);
+      }
+    }
+  },
+
+  /**
    * Terminates the current session by removing user profiles from persistent storage.
    */
   logout: (): void => {

@@ -1,36 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useAppContext } from '../../context/AppContext';
+import React from 'react';
+import { useOnboarding } from '../../hooks/useOnboarding';
 
 /**
  * Onboarding component collects the user's name and goals to tailor their carbon tracking experience.
  */
 export const Onboarding: React.FC = () => {
-  const { completeOnboarding } = useAppContext();
-  const [name, setName] = useState('');
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  
-  const goalOptions = [
-    "Reduce meat consumption",
-    "Use public transport more often",
-    "Lower home energy usage",
-    "Buy sustainable products",
-    "Walk or bike for short trips"
-  ];
-
-  const toggleGoal = (goal: string) => {
-    setSelectedGoals(prev => 
-      prev.includes(goal) ? prev.filter(g => g !== goal) : [...prev, goal]
-    );
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (name.trim().length > 0) {
-      completeOnboarding(name, selectedGoals);
-    }
-  };
+  const {
+    name,
+    setName,
+    selectedGoals,
+    toggleGoal,
+    handleSubmit,
+    goalOptions
+  } = useOnboarding();
 
   return (
     <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-xl shadow-lg border border-gray-100" role="main">

@@ -88,12 +88,12 @@ export const carbonService = {
   /**
    * Qualitative assessment of a daily total carbon footprint.
    */
-  getDailyAssessment: (totalCarbon: number): { label: string; color: string } => {
-    if (totalCarbon < 0) return { label: 'Net Positive (Eco-Hero!)', color: 'text-emerald-500' };
-    if (totalCarbon < 10) return { label: 'Excellent', color: 'text-green-500' };
-    if (totalCarbon < 25) return { label: 'Good', color: 'text-teal-500' };
-    if (totalCarbon < 50) return { label: 'Average', color: 'text-yellow-500' };
-    return { label: 'High', color: 'text-red-500' };
+  getDailyAssessment: (totalCarbon: number): { label: string; bgClass: string; textClass: string } => {
+    if (totalCarbon < 0) return { label: 'Net Positive (Eco-Hero!)', bgClass: 'bg-emerald-50', textClass: 'text-emerald-800' };
+    if (totalCarbon < 10) return { label: 'Excellent', bgClass: 'bg-green-50', textClass: 'text-green-800' };
+    if (totalCarbon < 25) return { label: 'Good', bgClass: 'bg-teal-50', textClass: 'text-teal-800' };
+    if (totalCarbon < 50) return { label: 'Average', bgClass: 'bg-amber-50', textClass: 'text-amber-900' };
+    return { label: 'High', bgClass: 'bg-red-50', textClass: 'text-red-800' };
   }
 };
 
