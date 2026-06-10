@@ -10,13 +10,27 @@ interface LocalDB {
   activities: Activity[];
 }
 
+// In-memory cache of the database to prevent redundant LocalStorage reads and JSON parsing.
+let cachedDB: LocalDB | null = null;
+
 const getDB = (): LocalDB => {
   if (typeof window === 'undefined') return { users: {}, activities: [] };
+  
+  // Invalidate cache if localStorage has been cleared (e.g. during test cleanup)
   const data = localStorage.getItem(DB_KEY);
-  return data ? JSON.parse(data) : { users: {}, activities: [] };
+  if (!data) {
+    cachedDB = { users: {}, activities: [] };
+    return cachedDB;
+  }
+
+  if (cachedDB) return cachedDB;
+  
+  cachedDB = JSON.parse(data);
+  return cachedDB!;
 };
 
 const saveDB = (db: LocalDB) => {
+  cachedDB = db;
   if (typeof window === 'undefined') return;
   localStorage.setItem(DB_KEY, JSON.stringify(db));
 };
@@ -40,7 +54,9 @@ export const dbService = {
    */
   getActivities: async (userId: string): Promise<Activity[]> => {
     const db = getDB();
-    return db.activities.filter(a => a.userId === userId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return db.activities
+      .filter(a => a.userId === userId)
+      .sort((a, b) => b.date.localeCompare(a.date)); // Lexicographical comparison of ISO strings is faster than Date parsing
   },
   
   /**

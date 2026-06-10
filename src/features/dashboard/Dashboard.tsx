@@ -1,13 +1,23 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
 import { DashboardHeader } from './components/DashboardHeader';
 import { StatsPanel } from './components/StatsPanel';
 import { SimpleActionsPanel } from './components/SimpleActionsPanel';
-import { AnalyticsPanel } from './components/AnalyticsPanel';
 import { ActivitiesHistoryPanel } from './components/ActivitiesHistoryPanel';
 import { ActivityLogger } from '../logger/ActivityLogger';
+
+// Lazy-load Recharts heavy component to improve first page load performance
+const AnalyticsPanel = dynamic(() => import('./components/AnalyticsPanel').then(m => m.AnalyticsPanel), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 bg-gray-50 rounded-xl animate-pulse flex items-center justify-center text-gray-400 mb-8 border border-gray-200">
+      Loading Analytics...
+    </div>
+  )
+});
 
 /**
  * Dashboard component orchestrates isolated presentation-only sub-components driven by the useDashboardStats hook.
