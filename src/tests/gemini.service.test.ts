@@ -51,41 +51,29 @@ describe('Gemini AI Service', () => {
     expect(mockGenerateContent).toHaveBeenCalledTimes(1);
   });
 
-  it('should fallback to OpenRouter when Gemini SDK fails', async () => {
-    // Force SDK to fail
-    mockGenerateContent.mockRejectedValue(new Error("Gemini quota exceeded"));
-
-    // Mock successful OpenRouter fetch
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        choices: [
-          {
-            message: {
-              content: JSON.stringify({
-                activities: [
-                  {
-                    description: "Ate beef burger",
-                    category: "food",
-                    estimatedCarbon: 2.5,
-                    insight: "Substitute beef for poultry.",
-                    reasoning: "Beef has high emissions."
-                  }
-                ],
-                generalFeedback: "Solid food choices today."
-              })
+  it('should fallback to gemini-2.5-pro when primary gemini-2.5-flash fails', async () => {
+    // 1st call fails, 2nd call succeeds
+    mockGenerateContent
+      .mockRejectedValueOnce(new Error("Gemini 2.5 Flash quota exceeded"))
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          activities: [
+            {
+              description: "Ate beef burger",
+              category: "food",
+              estimatedCarbon: 2.5,
+              insight: "Substitute beef for poultry.",
+              reasoning: "Beef has high emissions."
             }
-          }
-        ]
-      })
-    });
-    global.fetch = mockFetch;
+          ],
+          generalFeedback: "Solid food choices today."
+        })
+      });
 
     const result = await extractActivitiesAction("Ate beef burger");
     expect(result.activities).toHaveLength(1);
     expect(result.activities[0].estimatedCarbon).toBe(2.5);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
   });
 
   it('should return cached response on subsequent identical prompts without calling SDK', async () => {

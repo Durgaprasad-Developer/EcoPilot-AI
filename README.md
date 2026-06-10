@@ -1,6 +1,8 @@
 # EcoPilot AI – Personal Carbon Footprint Coach
 
-An intelligent AI-powered sustainability assistant that transforms carbon awareness into actionable daily habits. 
+An intelligent AI-powered sustainability assistant that transforms carbon awareness into actionable daily habits.
+
+![Dashboard Preview](public/screenshot.png)
 
 ## Project Overview
 
@@ -15,8 +17,29 @@ The solution is designed for environmentally conscious individuals who want a pe
 
 The project follows a modular, feature-based layered architecture:
 - **Presentation Layer:** Next.js Server Components and Client Components for UI.
-- **Service Layer:** Independent business logic (Carbon calculations, Database mocked via LocalStorage, Gemini AI interactions).
+- **Service Layer & Hooks:** Independent business logic and stats aggregation (Carbon calculations, Custom React Hooks, Database mocked via LocalStorage, Gemini AI interactions).
 - **Validation Layer:** Zod schemas to guarantee safe data transfer and AI output reliability.
+
+## Architecture Diagram
+
+```text
+User (Browser)
+   │
+   ├─► [AppContext] ──► [dbService] (LocalStorage)
+   │
+   ├─► [useDashboardStats] (Aggregation & Calculations) ──► [Dashboard UI]
+   │
+   └─► [ActivityLogger]
+          │ (Natural Language Prompt)
+          ▼
+     [gemini.service]
+          │
+          ├─► Attempt 1: [Gemini SDK] (gemini-2.5-flash)
+          │      │ (If Rate-Limited/Error)
+          │      └──────────┐
+          ▼                 ▼
+     [AI Cache]        Attempt 2: [Gemini SDK] (gemini-2.5-pro)
+```
 
 ## Features
 
@@ -39,14 +62,14 @@ The project follows a modular, feature-based layered architecture:
 
 1. **User Onboarding:** Users define their baseline and sustainability goals.
 2. **AI Activity Logger:** Users type a natural language prompt (e.g., "I drove 10 miles in a gas car").
-3. **Smart Extraction:** The system uses Gemini SDK as the primary LLM (with OpenRouter Claude-3 fallback) to parse the text into a strictly typed JSON schema containing category, carbon estimate, and reasoning.
-4. **Dashboard Analytics:** The parsed data is fed into a deterministic Carbon Engine service and visualized on a Recharts dashboard showing a 7-day trend and emission breakdowns.
+3. **Smart Extraction:** The system uses the Google Gemini SDK as the primary LLM (with a high-capacity `gemini-2.5-pro` SDK fallback) to parse the text into a strictly typed JSON schema containing category, carbon estimate, and reasoning.
+4. **Dashboard Analytics:** The parsed data is fed into a deterministic Carbon Engine service and aggregated via the `useDashboardStats` hook before rendering.
 
 ## Assumptions Made
 
 - **Local Storage Validation:** To ensure seamless testing for the judges without needing external Firebase configuration, LocalStorage is used as a mock database. The architecture is built with generic Service classes (`db.service.ts`), meaning it can be swapped to a real DB with zero UI changes.
 - **Emission Averages:** The AI calculates carbon based on generalized national averages for activities unless specific details (e.g., car model year) are provided by the user.
-- **Security & APIs:** The Gemini and OpenRouter API keys are assumed to be securely loaded via Next.js Server Actions to prevent client-side exposure.
+- **Security & APIs:** The Gemini API keys are assumed to be securely loaded via Next.js Server Actions to prevent client-side exposure.
 
 ## Folder Structure
 
@@ -56,6 +79,7 @@ src/
 ├── components/           # Reusable UI components
 ├── context/              # React Context for global state
 ├── features/             # Feature-based UI (Dashboard, Logger, Onboarding)
+├── hooks/                # Custom React hooks (Business logic extraction)
 ├── services/             # Core business logic (AI, Carbon, DB)
 ├── tests/                # Unit and Integration Tests
 ├── types/                # TypeScript Interfaces

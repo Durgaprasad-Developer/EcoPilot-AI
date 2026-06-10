@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React from 'react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { format, subDays, isSameDay } from 'date-fns';
-import { useAppContext } from '../../context/AppContext';
+import { format } from 'date-fns';
+import { useDashboardStats } from '../../hooks/useDashboardStats';
 import { ActivityLogger } from '../logger/ActivityLogger';
-import { carbonService, type SimpleAction } from '../../services/carbon.service';
 import { Leaf, Flame, Activity as ActivityIcon, Sparkles, PlusCircle, Loader2 } from 'lucide-react';
 
 // Color themes mapped for WCAG AA compliance (4.5:1 contrast text-on-bg ratio)
@@ -28,80 +27,22 @@ const CHART_COLORS = {
 
 /**
  * Dashboard component displays sustainability statistics, trends, simple action shortcuts, and logging features.
+ * This is a presentation-only component driven by the useDashboardStats hook.
  */
 export const Dashboard: React.FC = () => {
-  const { user, activities, logout, addActivity } = useAppContext();
-  const [activeLoggingId, setActiveLoggingId] = useState<string | null>(null);
-
-  // Get simple actions filtered by user goals
-  const actions = useMemo(() => {
-    return carbonService.getActionsForGoals(user?.goals || []);
-  }, [user?.goals]);
-
-  // Calculate daily stats and trend data
-  const { totalToday, totalSaved, weeklyData, categoryData } = useMemo(() => {
-    const today = new Date();
-    
-    // Today's Net Footprint (Emissions minus Reductions)
-    const totalToday = activities
-      .filter(a => isSameDay(new Date(a.date), today))
-      .reduce((sum, a) => sum + (a.isReduction ? -a.carbonAmount : a.carbonAmount), 0);
-
-    // Cumulative Carbon Saved
-    const totalSaved = activities
-      .filter(a => a.isReduction)
-      .reduce((sum, a) => sum + a.carbonAmount, 0);
-
-    // Last 7 days data for the trend chart
-    const weeklyData = Array.from({ length: 7 }).map((_, i) => {
-      const d = subDays(today, 6 - i);
-      const dayTotal = activities
-        .filter(a => isSameDay(new Date(a.date), d))
-        .reduce((sum, a) => sum + (a.isReduction ? -a.carbonAmount : a.carbonAmount), 0);
-      return {
-        name: format(d, 'EEE'),
-        amount: Number(dayTotal.toFixed(1))
-      };
-    });
-
-    // Category breakdown for pie chart
-    const categoryTotals = activities.reduce((acc, a) => {
-      const amount = a.isReduction ? -a.carbonAmount : a.carbonAmount;
-      acc[a.category] = (acc[a.category] || 0) + amount;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const categoryData = Object.entries(categoryTotals)
-      .map(([name, value]) => ({
-        name,
-        value: Number(value.toFixed(1))
-      }))
-      .filter(item => item.value > 0)
-      .sort((a, b) => b.value - a.value);
-
-    return { totalToday, totalSaved, weeklyData, categoryData };
-  }, [activities]);
-
-  const assessment = useMemo(() => {
-    return carbonService.getDailyAssessment(totalToday);
-  }, [totalToday]);
-
-  // One-click log callback
-  const handleLogReduction = useCallback(async (action: SimpleAction) => {
-    if (activeLoggingId) return;
-    setActiveLoggingId(action.id);
-    try {
-      await addActivity({
-        description: `${action.name}`,
-        category: action.category,
-        carbonAmount: action.reductionAmount,
-        aiInsight: `Excellent choice! You saved ${action.reductionAmount} kg CO₂e by taking this action.`,
-        isReduction: true
-      });
-    } finally {
-      setActiveLoggingId(null);
-    }
-  }, [activeLoggingId, addActivity]);
+  const {
+    user,
+    activities,
+    logout,
+    actions,
+    totalToday,
+    totalSaved,
+    weeklyData,
+    categoryData,
+    assessment,
+    activeLoggingId,
+    handleLogReduction
+  } = useDashboardStats();
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">

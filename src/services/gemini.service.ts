@@ -76,57 +76,38 @@ export async function extractActivitiesAction(userInput: string): Promise<AIExtr
       throw new Error("Gemini API Key is missing.");
     }
 
-    // Attempt 1: Gemini Direct via SDK
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        { role: 'user', parts: [{ text: SYSTEM_PROMPT + "\n\n<user_input>\n" + sanitized + "\n</user_input>" }] }
-      ],
-      config: {
-          temperature: 0.2, // low temperature for deterministic parsing
-          responseMimeType: "application/json"
-      }
-    });
-    
-    responseText = response.text || '';
-    
-  } catch (error) {
-    console.warn("Gemini Direct Error, falling back to OpenRouter:", error);
-    
-    // Attempt 2: Fallback to OpenRouter (using Claude-3-Haiku)
-    if (!process.env.NEXT_PUBLIC_OPENROUTE_API_KEY) {
-      throw new Error("OpenRouter API Key is missing. Both primary and fallback failed.");
-    }
-
+    // Attempt 1: Gemini Direct via SDK (gemini-2.5-flash)
     try {
-      const fallbackResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_OPENROUTE_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "anthropic/claude-3-haiku", // High-reliability diverse model via OpenRouter
-          temperature: 0.2,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: "<user_input>\n" + sanitized + "\n</user_input>" }
-          ]
-        })
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          { role: 'user', parts: [{ text: SYSTEM_PROMPT + "\n\n<user_input>\n" + sanitized + "\n</user_input>" }] }
+        ],
+        config: {
+            temperature: 0.2, // low temperature for deterministic parsing
+            responseMimeType: "application/json"
+        }
       });
-
-      if (!fallbackResponse.ok) {
-        throw new Error(`OpenRouter API failed with status: ${fallbackResponse.status}`);
-      }
-
-      const data = await fallbackResponse.json();
-      responseText = data.choices?.[0]?.message?.content || '';
+      responseText = response.text || '';
+    } catch (error) {
+      console.warn("Gemini Flash attempt failed, trying gemini-2.5-pro fallback:", error);
       
-    } catch (fallbackError) {
-      console.error("OpenRouter Fallback Error:", fallbackError);
-      throw new Error("Failed to process activities via both Gemini and OpenRouter. Please try again.");
+      // Attempt 2: Fallback to high-capacity gemini-2.5-pro
+      const fallbackResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-pro',
+        contents: [
+          { role: 'user', parts: [{ text: SYSTEM_PROMPT + "\n\n<user_input>\n" + sanitized + "\n</user_input>" }] }
+        ],
+        config: {
+            temperature: 0.2,
+            responseMimeType: "application/json"
+        }
+      });
+      responseText = fallbackResponse.text || '';
     }
+  } catch (error) {
+    console.error("Gemini AI API Error:", error);
+    throw new Error("Failed to process activities via Gemini. Please try again later.");
   }
 
   // Parse and validate the response
