@@ -1,19 +1,29 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, subDays, isSameDay } from 'date-fns';
 import { useAppContext } from '../../context/AppContext';
 import { ActivityLogger } from '../logger/ActivityLogger';
 import { carbonService, type SimpleAction } from '../../services/carbon.service';
-import { Leaf, Flame, Activity as ActivityIcon, Sparkles, PlusCircle } from 'lucide-react';
+import { Leaf, Flame, Activity as ActivityIcon, Sparkles, PlusCircle, Loader2 } from 'lucide-react';
 
+// Color themes mapped for WCAG AA compliance (4.5:1 contrast text-on-bg ratio)
 const COLORS = {
-  transport: '#0ea5e9', // sky
-  food: '#f59e0b', // amber
-  energy: '#8b5cf6', // violet
-  shopping: '#ec4899', // pink
-  other: '#94a3b8' // slate
+  transport: { text: '#0369a1', bg: '#e0f2fe' }, // sky-700, sky-100
+  food: { text: '#b45309', bg: '#fef3c7' }, // amber-700, amber-100
+  energy: { text: '#6d28d9', bg: '#ede9fe' }, // violet-700, violet-100
+  shopping: { text: '#be185d', bg: '#fce7f3' }, // pink-700, pink-100
+  other: { text: '#334155', bg: '#f1f5f9' } // slate-700, slate-100
+};
+
+// Static chart colors (visual display only)
+const CHART_COLORS = {
+  transport: '#0ea5e9', // sky-500
+  food: '#f59e0b', // amber-500
+  energy: '#8b5cf6', // violet-500
+  shopping: '#ec4899', // pink-500
+  other: '#94a3b8' // slate-400
 };
 
 /**
@@ -21,6 +31,7 @@ const COLORS = {
  */
 export const Dashboard: React.FC = () => {
   const { user, activities, logout, addActivity } = useAppContext();
+  const [activeLoggingId, setActiveLoggingId] = useState<string | null>(null);
 
   // Get simple actions filtered by user goals
   const actions = useMemo(() => {
@@ -76,15 +87,21 @@ export const Dashboard: React.FC = () => {
   }, [totalToday]);
 
   // One-click log callback
-  const handleLogReduction = async (action: SimpleAction) => {
-    await addActivity({
-      description: `${action.name}`,
-      category: action.category,
-      carbonAmount: action.reductionAmount,
-      aiInsight: `Excellent choice! You saved ${action.reductionAmount} kg CO₂e by taking this action.`,
-      isReduction: true
-    });
-  };
+  const handleLogReduction = useCallback(async (action: SimpleAction) => {
+    if (activeLoggingId) return;
+    setActiveLoggingId(action.id);
+    try {
+      await addActivity({
+        description: `${action.name}`,
+        category: action.category,
+        carbonAmount: action.reductionAmount,
+        aiInsight: `Excellent choice! You saved ${action.reductionAmount} kg CO₂e by taking this action.`,
+        isReduction: true
+      });
+    } finally {
+      setActiveLoggingId(null);
+    }
+  }, [activeLoggingId, addActivity]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -146,27 +163,37 @@ export const Dashboard: React.FC = () => {
           Select actions to instantly log carbon footprint reductions based on your sustainability goals.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {actions.map(action => (
-            <button
-              key={action.id}
-              onClick={() => handleLogReduction(action)}
-              className="flex items-center justify-between p-3.5 bg-teal-50/20 hover:bg-teal-50/60 border border-teal-100 hover:border-teal-200 rounded-xl text-left transition-all group focus:ring-2 focus:ring-teal-500 outline-none"
-              aria-label={`Log simple action reduction: ${action.name} for category ${action.category}`}
-            >
-              <div className="pr-3">
-                <p className="text-sm font-medium text-gray-800 group-hover:text-teal-900 transition-colors">
-                  {action.name}
-                </p>
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
-                  {action.category}
-                </span>
-              </div>
-              <div className="shrink-0 bg-teal-600 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg group-hover:scale-105 transition-transform flex items-center space-x-1">
-                <span>-{action.reductionAmount}</span>
-                <PlusCircle className="w-3.5 h-3.5 ml-0.5" />
-              </div>
-            </button>
-          ))}
+          {actions.map(action => {
+            const isLogging = activeLoggingId === action.id;
+            return (
+              <button
+                key={action.id}
+                onClick={() => handleLogReduction(action)}
+                disabled={activeLoggingId !== null}
+                className="flex items-center justify-between p-3.5 bg-teal-50/20 hover:bg-teal-50/60 border border-teal-100 hover:border-teal-200 rounded-xl text-left transition-all group focus:ring-2 focus:ring-teal-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={`Log simple action reduction: ${action.name} for category ${action.category}`}
+              >
+                <div className="pr-3">
+                  <p className="text-sm font-medium text-gray-800 group-hover:text-teal-900 transition-colors">
+                    {action.name}
+                  </p>
+                  <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+                    {action.category}
+                  </span>
+                </div>
+                <div className="shrink-0 bg-teal-600 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg group-hover:scale-105 transition-transform flex items-center space-x-1">
+                  {isLogging ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <>
+                      <span>-{action.reductionAmount}</span>
+                      <PlusCircle className="w-3.5 h-3.5 ml-0.5" />
+                    </>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -208,7 +235,7 @@ export const Dashboard: React.FC = () => {
                     dataKey="value"
                   >
                     {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS] || COLORS.other} />
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[entry.name as keyof typeof CHART_COLORS] || CHART_COLORS.other} />
                     ))}
                   </Pie>
                   <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
@@ -223,7 +250,7 @@ export const Dashboard: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-3 mt-2">
             {categoryData.map(c => (
               <div key={c.name} className="flex items-center text-xs text-gray-600 capitalize">
-                <span className="w-3 h-3 rounded-full mr-1.5" style={{backgroundColor: COLORS[c.name as keyof typeof COLORS] || COLORS.other}}></span>
+                <span className="w-3 h-3 rounded-full mr-1.5" style={{backgroundColor: CHART_COLORS[c.name as keyof typeof CHART_COLORS] || CHART_COLORS.other}}></span>
                 {c.name}
               </div>
             ))}
@@ -244,36 +271,42 @@ export const Dashboard: React.FC = () => {
               <p className="text-gray-500">Your journey starts here. Log your first activity above.</p>
             </div>
           ) : (
-            activities.slice(0, 10).map(activity => (
-              <div key={activity.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-start gap-4 hover:shadow-md transition-shadow">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize" style={{backgroundColor: `${COLORS[activity.category as keyof typeof COLORS]}20`, color: COLORS[activity.category as keyof typeof COLORS]}}>
-                      {activity.category}
-                    </span>
-                    {activity.isReduction && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        Reduction
+            activities.slice(0, 10).map(activity => {
+              const theme = COLORS[activity.category as keyof typeof COLORS] || COLORS.other;
+              return (
+                <div key={activity.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-start gap-4 hover:shadow-md transition-shadow">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span 
+                        className="px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize" 
+                        style={{ backgroundColor: theme.bg, color: theme.text }}
+                      >
+                        {activity.category}
                       </span>
-                    )}
-                    <span className="text-xs text-gray-400">{format(new Date(activity.date), 'MMM d, h:mm a')}</span>
-                  </div>
-                  <p className="text-gray-800 font-medium">{activity.description}</p>
-                  {activity.aiInsight && (
-                    <div className="mt-3 p-3 bg-teal-50/50 rounded-lg border border-teal-100 flex items-start space-x-2">
-                      <Sparkles className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />
-                      <p className="text-sm text-teal-800 leading-relaxed">{activity.aiInsight}</p>
+                      {activity.isReduction && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          Reduction
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-400">{format(new Date(activity.date), 'MMM d, h:mm a')}</span>
                     </div>
-                  )}
+                    <p className="text-gray-800 font-medium">{activity.description}</p>
+                    {activity.aiInsight && (
+                      <div className="mt-3 p-3 bg-teal-50/50 rounded-lg border border-teal-100 flex items-start space-x-2">
+                        <Sparkles className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />
+                        <p className="text-sm text-teal-800 leading-relaxed">{activity.aiInsight}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="md:text-right shrink-0">
+                    <span className="text-lg font-bold text-gray-900">
+                      {activity.isReduction ? '-' : ''}{activity.carbonAmount}
+                    </span>
+                    <span className="text-xs text-gray-500 ml-1">kg CO₂</span>
+                  </div>
                 </div>
-                <div className="md:text-right shrink-0">
-                  <span className="text-lg font-bold text-gray-900">
-                    {activity.isReduction ? '-' : ''}{activity.carbonAmount}
-                  </span>
-                  <span className="text-xs text-gray-500 ml-1">kg CO₂</span>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
