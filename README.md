@@ -6,7 +6,12 @@ An intelligent AI-powered sustainability assistant that transforms carbon awaren
 
 EcoPilot AI goes beyond traditional carbon calculators by acting as a personal environmental mentor. Users can describe their daily activities in natural language, and the AI categorizes them, estimates their carbon footprint, and provides highly personalized insights to help build sustainable habits over time.
 
-## Architecture
+## Chosen Vertical
+
+**Persona/Vertical:** Sustainability & Lifestyle (Personal Carbon Footprint Coach)
+The solution is designed for environmentally conscious individuals who want a personalized, AI-driven mentor to track their daily activities and build sustainable habits without complex manual data entry.
+
+## Approach and Logic
 
 The project follows a modular, feature-based layered architecture:
 - **Presentation Layer:** Next.js Server Components and Client Components for UI.
@@ -29,6 +34,19 @@ The project follows a modular, feature-based layered architecture:
 - **Validation:** Zod
 - **Testing:** Vitest, React Testing Library
 - **Storage/Auth:** LocalStorage (Mock Database/Auth for hackathon environment)
+
+## How the Solution Works
+
+1. **User Onboarding:** Users define their baseline and sustainability goals.
+2. **AI Activity Logger:** Users type a natural language prompt (e.g., "I drove 10 miles in a gas car").
+3. **Smart Extraction:** The system uses Gemini SDK as the primary LLM (with OpenRouter Claude-3 fallback) to parse the text into a strictly typed JSON schema containing category, carbon estimate, and reasoning.
+4. **Dashboard Analytics:** The parsed data is fed into a deterministic Carbon Engine service and visualized on a Recharts dashboard showing a 7-day trend and emission breakdowns.
+
+## Assumptions Made
+
+- **Local Storage Validation:** To ensure seamless testing for the judges without needing external Firebase configuration, LocalStorage is used as a mock database. The architecture is built with generic Service classes (`db.service.ts`), meaning it can be swapped to a real DB with zero UI changes.
+- **Emission Averages:** The AI calculates carbon based on generalized national averages for activities unless specific details (e.g., car model year) are provided by the user.
+- **Security & APIs:** The Gemini and OpenRouter API keys are assumed to be securely loaded via Next.js Server Actions to prevent client-side exposure.
 
 ## Folder Structure
 
