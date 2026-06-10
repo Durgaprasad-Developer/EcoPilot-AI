@@ -17,7 +17,7 @@ export const Onboarding: React.FC = () => {
   } = useOnboarding();
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-xl shadow-lg border border-gray-100" role="main">
+    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-xl shadow-lg border border-gray-100" role="region" aria-label="Onboarding Setup Form">
       <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome to EcoPilot AI</h1>
       <p className="text-gray-600 mb-6">Let&apos;s set up your personalized profile to understand, track, and reduce your carbon footprint.</p>
       

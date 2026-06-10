@@ -91,6 +91,45 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ weeklyData, cate
           ))}
         </div>
       </div>
+
+      {/* Screen reader only tabular summaries for both charts to pass WCAG 2.2 criteria */}
+      <div className="sr-only">
+        <h4>Weekly Carbon Footprint Trend Table</h4>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col">Net Emissions (kg CO2e)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {weeklyData.map(d => (
+              <tr key={d.name}>
+                <td>{d.name}</td>
+                <td>{d.amount} kg CO2e</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <h4>Carbon Emissions Share by Category Table</h4>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Category</th>
+              <th scope="col">Net Emissions (kg CO2e)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {categoryData.map(c => (
+              <tr key={c.name}>
+                <td className="capitalize">{c.name}</td>
+                <td>{c.value} kg CO2e</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
