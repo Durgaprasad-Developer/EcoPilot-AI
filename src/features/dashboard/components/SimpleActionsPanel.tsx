@@ -40,7 +40,7 @@ export const SimpleActionsPanel: React.FC<SimpleActionsPanelProps> = ({
                 <p className="text-sm font-medium text-gray-800 group-hover:text-teal-900 transition-colors">
                   {action.name}
                 </p>
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
                   {action.category}
                 </span>
               </div>

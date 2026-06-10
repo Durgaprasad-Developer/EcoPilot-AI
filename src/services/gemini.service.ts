@@ -3,12 +3,14 @@
 import { GoogleGenAI } from '@google/genai';
 import { aiExtractionSchema, type AIExtraction } from '../validators/schema';
 
-// Configuration constants to prevent magic values
+import {
+  DEFAULT_TEMPERATURE,
+  MAX_INPUT_LENGTH,
+  MAX_CACHE_SIZE
+} from '../constants';
+
 const PRIMARY_MODEL = 'gemini-2.5-flash';
 const FALLBACK_MODEL = 'gemini-2.5-pro';
-const DEFAULT_TEMPERATURE = 0.2;
-const MAX_INPUT_LENGTH = 1000;
-const MAX_CACHE_SIZE = 100;
 
 // Initialize the Gemini client using the environment variable securely
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' });

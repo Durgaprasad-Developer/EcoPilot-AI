@@ -2,6 +2,8 @@ import React from 'react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Activity as ActivityIcon, PieChart as PieIcon } from 'lucide-react';
 
+import { CATEGORIES } from '../../../constants';
+
 interface WeeklyDataPoint {
   name: string;
   amount: number;
@@ -18,11 +20,11 @@ interface AnalyticsPanelProps {
 }
 
 const CHART_COLORS = {
-  transport: '#0ea5e9',
-  food: '#f59e0b',
-  energy: '#8b5cf6',
-  shopping: '#ec4899',
-  other: '#94a3b8'
+  [CATEGORIES.TRANSPORT]: '#0ea5e9',
+  [CATEGORIES.FOOD]: '#f59e0b',
+  [CATEGORIES.ENERGY]: '#8b5cf6',
+  [CATEGORIES.SHOPPING]: '#ec4899',
+  [CATEGORIES.OTHER]: '#94a3b8'
 };
 
 /**

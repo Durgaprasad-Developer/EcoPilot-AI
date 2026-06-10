@@ -1,5 +1,6 @@
 import { isSameDay, subDays, format } from 'date-fns';
 import type { Activity } from '../types';
+import { DAYS_IN_WEEK } from '../constants';
 
 /**
  * Calculates net carbon footprint for the current day (emissions minus offsets).
@@ -31,8 +32,8 @@ export function calculateTotalSaved(activities: Activity[]): number {
  */
 export function calculateWeeklyData(activities: Activity[]): Array<{ name: string; amount: number }> {
   const today = new Date();
-  return Array.from({ length: 7 }).map((_, i) => {
-    const d = subDays(today, 6 - i);
+  return Array.from({ length: DAYS_IN_WEEK }).map((_, i) => {
+    const d = subDays(today, (DAYS_IN_WEEK - 1) - i);
     const dayTotal = activities
       .filter(a => isSameDay(new Date(a.date), d))
       .reduce((sum, a) => sum + (a.isReduction ? -a.carbonAmount : a.carbonAmount), 0);

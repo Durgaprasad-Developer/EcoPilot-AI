@@ -3,16 +3,18 @@ import { format } from 'date-fns';
 import { Flame, Leaf, Sparkles } from 'lucide-react';
 import type { Activity } from '../../../types';
 
+import { CATEGORIES } from '../../../constants';
+
 interface ActivitiesHistoryPanelProps {
   activities: Activity[];
 }
 
 const COLORS = {
-  transport: { text: 'text-sky-700', bg: 'bg-sky-100' },
-  food: { text: 'text-amber-800', bg: 'bg-amber-100' },
-  energy: { text: 'text-purple-700', bg: 'bg-purple-100' },
-  shopping: { text: 'text-pink-700', bg: 'bg-pink-100' },
-  other: { text: 'text-slate-700', bg: 'bg-slate-100' }
+  [CATEGORIES.TRANSPORT]: { text: 'text-sky-700', bg: 'bg-sky-100' },
+  [CATEGORIES.FOOD]: { text: 'text-amber-800', bg: 'bg-amber-100' },
+  [CATEGORIES.ENERGY]: { text: 'text-purple-700', bg: 'bg-purple-100' },
+  [CATEGORIES.SHOPPING]: { text: 'text-pink-700', bg: 'bg-pink-100' },
+  [CATEGORIES.OTHER]: { text: 'text-slate-700', bg: 'bg-slate-100' }
 };
 
 /**
