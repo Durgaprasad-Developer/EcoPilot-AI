@@ -22,9 +22,16 @@ describe('Carbon Service', () => {
   });
 
   it('should return correct daily assessment label', () => {
+    expect(carbonService.getDailyAssessment(-5).label).toBe('Net Positive (Eco-Hero!)');
     expect(carbonService.getDailyAssessment(5).label).toBe('Excellent');
     expect(carbonService.getDailyAssessment(15).label).toBe('Good');
     expect(carbonService.getDailyAssessment(35).label).toBe('Average');
     expect(carbonService.getDailyAssessment(100).label).toBe('High');
+  });
+
+  it('should handle invalid quantities gracefully', () => {
+    expect(carbonService.calculateEmission('transport', NaN)).toBe(0);
+    expect(carbonService.calculateEmission('transport', -10)).toBe(0);
+    expect(carbonService.calculateEmission('transport', Infinity)).toBe(0);
   });
 });

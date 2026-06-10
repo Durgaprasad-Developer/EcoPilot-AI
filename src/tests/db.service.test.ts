@@ -81,4 +81,12 @@ describe('Database Service', () => {
     expect(activities[0].id).toBe('act_new');
     expect(activities[1].id).toBe('act_old');
   });
+
+  it('should handle corrupted localStorage safely without throwing exceptions', async () => {
+    localStorage.setItem('ecopilot_db', '{corrupted_data:');
+    const user = await dbService.getUser('any');
+    expect(user).toBeNull();
+    const activities = await dbService.getActivities('any');
+    expect(activities).toEqual([]);
+  });
 });

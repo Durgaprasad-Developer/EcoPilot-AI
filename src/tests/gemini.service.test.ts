@@ -101,4 +101,16 @@ describe('Gemini AI Service', () => {
     expect(result2).toEqual(result1);
     expect(mockGenerateContent).toHaveBeenCalledTimes(1); // Still 1 call
   });
+
+  it('should throw validation error when schema is invalid', async () => {
+    mockGenerateContent.mockResolvedValue({
+      text: JSON.stringify({
+        invalid_structure: true
+      })
+    });
+
+    await expect(extractActivitiesAction("Invalid input data")).rejects.toThrow(
+      "AI response structure was invalid. Please try describing your activity again."
+    );
+  });
 });

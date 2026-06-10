@@ -120,7 +120,13 @@ export async function extractActivitiesAction(userInput: string): Promise<AIExtr
     throw new Error("Failed to parse the activities extraction response from the AI.");
   }
 
-  const parsedData = aiExtractionSchema.parse(jsonData);
+  let parsedData;
+  try {
+    parsedData = aiExtractionSchema.parse(jsonData);
+  } catch (error) {
+    console.error("Zod schema validation failure:", error, "Data:", jsonData);
+    throw new Error("AI response structure was invalid. Please try describing your activity again.");
+  }
 
   // Store in cache with basic eviction to prevent memory leaks (max 100 entries)
   if (aiCache.size >= 100) {

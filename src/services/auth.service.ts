@@ -12,8 +12,13 @@ export const authService = {
    */
   getCurrentUser: (): UserProfile | null => {
     if (typeof window === 'undefined') return null;
-    const data = localStorage.getItem(AUTH_KEY);
-    return data ? JSON.parse(data) : null;
+    try {
+      const data = localStorage.getItem(AUTH_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch (e) {
+      console.warn("LocalStorage read or JSON parse failed in authService:", e);
+      return null;
+    }
   },
   
   /**
@@ -28,7 +33,11 @@ export const authService = {
       goals: []
     };
     if (typeof window !== 'undefined') {
-      localStorage.setItem(AUTH_KEY, JSON.stringify(mockUser));
+      try {
+        localStorage.setItem(AUTH_KEY, JSON.stringify(mockUser));
+      } catch (e) {
+        console.warn("LocalStorage setItem failed in loginAnonymously:", e);
+      }
     }
     return mockUser;
   },
@@ -38,7 +47,11 @@ export const authService = {
    */
   logout: (): void => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(AUTH_KEY);
+      try {
+        localStorage.removeItem(AUTH_KEY);
+      } catch (e) {
+        console.warn("LocalStorage removeItem failed in logout:", e);
+      }
     }
   }
 };

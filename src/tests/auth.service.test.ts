@@ -27,4 +27,9 @@ describe('Auth Service', () => {
     authService.logout();
     expect(authService.getCurrentUser()).toBeNull();
   });
+
+  it('should return null and not crash if storage contains corrupted JSON', () => {
+    localStorage.setItem('ecopilot_current_user', 'invalid-json{');
+    expect(authService.getCurrentUser()).toBeNull();
+  });
 });

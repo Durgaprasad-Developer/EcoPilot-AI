@@ -25,14 +25,23 @@ const getDB = (): LocalDB => {
 
   if (cachedDB) return cachedDB;
   
-  cachedDB = JSON.parse(data);
+  try {
+    cachedDB = JSON.parse(data);
+  } catch (e) {
+    console.warn("JSON parsing failed in dbService getDB:", e);
+    cachedDB = { users: {}, activities: [] };
+  }
   return cachedDB!;
 };
 
 const saveDB = (db: LocalDB) => {
   cachedDB = db;
   if (typeof window === 'undefined') return;
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  try {
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+  } catch (e) {
+    console.warn("LocalStorage setItem failed in dbService saveDB:", e);
+  }
 };
 
 export const dbService = {

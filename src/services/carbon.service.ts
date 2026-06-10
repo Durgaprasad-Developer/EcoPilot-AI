@@ -69,8 +69,9 @@ export const carbonService = {
    * Calculates carbon footprint emissions.
    */
   calculateEmission: (category: Category, quantity: number = 1): number => {
+    const cleanQty = isNaN(quantity) || !isFinite(quantity) || quantity < 0 ? 0 : quantity;
     const factor = EMISSION_FACTORS[category] || EMISSION_FACTORS.other;
-    return Number((factor * quantity).toFixed(2));
+    return Number((factor * cleanQty).toFixed(2));
   },
   
   /**
