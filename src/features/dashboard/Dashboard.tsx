@@ -5,8 +5,8 @@ import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 import { format, subDays, isSameDay } from 'date-fns';
 import { useAppContext } from '../../context/AppContext';
 import { ActivityLogger } from '../logger/ActivityLogger';
-import { carbonService } from '../../services/carbon.service';
-import { Leaf, Flame, Activity as ActivityIcon, Sparkles } from 'lucide-react';
+import { carbonService, type SimpleAction } from '../../services/carbon.service';
+import { Leaf, Flame, Activity as ActivityIcon, Sparkles, PlusCircle } from 'lucide-react';
 
 const COLORS = {
   transport: '#0ea5e9', // sky
@@ -16,24 +16,37 @@ const COLORS = {
   other: '#94a3b8' // slate
 };
 
-export const Dashboard = () => {
-  const { user, activities, logout } = useAppContext();
+/**
+ * Dashboard component displays sustainability statistics, trends, simple action shortcuts, and logging features.
+ */
+export const Dashboard: React.FC = () => {
+  const { user, activities, logout, addActivity } = useAppContext();
 
-  // Calculate stats
-  const { totalToday, weeklyData, categoryData } = useMemo(() => {
+  // Get simple actions filtered by user goals
+  const actions = useMemo(() => {
+    return carbonService.getActionsForGoals(user?.goals || []);
+  }, [user?.goals]);
+
+  // Calculate daily stats and trend data
+  const { totalToday, totalSaved, weeklyData, categoryData } = useMemo(() => {
     const today = new Date();
     
-    // Today's total
+    // Today's Net Footprint (Emissions minus Reductions)
     const totalToday = activities
       .filter(a => isSameDay(new Date(a.date), today))
+      .reduce((sum, a) => sum + (a.isReduction ? -a.carbonAmount : a.carbonAmount), 0);
+
+    // Cumulative Carbon Saved
+    const totalSaved = activities
+      .filter(a => a.isReduction)
       .reduce((sum, a) => sum + a.carbonAmount, 0);
 
-    // Last 7 days data for bar chart
+    // Last 7 days data for the trend chart
     const weeklyData = Array.from({ length: 7 }).map((_, i) => {
       const d = subDays(today, 6 - i);
       const dayTotal = activities
         .filter(a => isSameDay(new Date(a.date), d))
-        .reduce((sum, a) => sum + a.carbonAmount, 0);
+        .reduce((sum, a) => sum + (a.isReduction ? -a.carbonAmount : a.carbonAmount), 0);
       return {
         name: format(d, 'EEE'),
         amount: Number(dayTotal.toFixed(1))
@@ -42,43 +55,79 @@ export const Dashboard = () => {
 
     // Category breakdown for pie chart
     const categoryTotals = activities.reduce((acc, a) => {
-      acc[a.category] = (acc[a.category] || 0) + a.carbonAmount;
+      const amount = a.isReduction ? -a.carbonAmount : a.carbonAmount;
+      acc[a.category] = (acc[a.category] || 0) + amount;
       return acc;
     }, {} as Record<string, number>);
     
-    const categoryData = Object.entries(categoryTotals).map(([name, value]) => ({
-      name,
-      value: Number(value.toFixed(1))
-    })).sort((a, b) => b.value - a.value);
+    const categoryData = Object.entries(categoryTotals)
+      .map(([name, value]) => ({
+        name,
+        value: Number(value.toFixed(1))
+      }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value);
 
-    return { totalToday, weeklyData, categoryData };
+    return { totalToday, totalSaved, weeklyData, categoryData };
   }, [activities]);
 
-  const assessment = carbonService.getDailyAssessment(totalToday);
+  const assessment = useMemo(() => {
+    return carbonService.getDailyAssessment(totalToday);
+  }, [totalToday]);
+
+  // One-click log callback
+  const handleLogReduction = async (action: SimpleAction) => {
+    await addActivity({
+      description: `${action.name}`,
+      category: action.category,
+      carbonAmount: action.reductionAmount,
+      aiInsight: `Excellent choice! You saved ${action.reductionAmount} kg CO₂e by taking this action.`,
+      isReduction: true
+    });
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <header className="flex justify-between items-center mb-8">
+      <header className="flex justify-between items-center mb-8" role="banner">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Hello, {user?.name}</h1>
           <p className="text-gray-600">Track and reduce your environmental impact.</p>
         </div>
-        <button onClick={logout} className="text-sm text-gray-500 hover:text-gray-800 transition-colors">
+        <button 
+          onClick={logout} 
+          className="text-sm font-medium text-teal-600 hover:text-teal-800 transition-colors focus:ring-2 focus:ring-teal-500 outline-none rounded p-1"
+          aria-label="Switch current user profile"
+        >
           Switch Profile
         </button>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Today's Score */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center items-center">
-          <p className="text-sm font-medium text-gray-500 mb-2 uppercase tracking-wide">Today&apos;s Footprint</p>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-5xl font-extrabold text-gray-900">{totalToday.toFixed(1)}</span>
-            <span className="text-lg text-gray-500">kg CO₂e</span>
+        {/* Today's Score and Saved Metrics */}
+        <div className="flex flex-col gap-6">
+          {/* Today's Footprint Card */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center items-center flex-1" role="region" aria-label="Today's Footprint Status">
+            <p className="text-sm font-medium text-gray-500 mb-2 uppercase tracking-wide">Today&apos;s Footprint</p>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-5xl font-extrabold text-gray-900">{totalToday.toFixed(1)}</span>
+              <span className="text-lg text-gray-500">kg CO₂e</span>
+            </div>
+            <span className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 ${assessment.color}`}>
+              {assessment.label}
+            </span>
           </div>
-          <span className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 ${assessment.color}`}>
-            {assessment.label}
-          </span>
+
+          {/* Cumulative Saved Card */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center items-center flex-1" role="region" aria-label="Cumulative Carbon Saved">
+            <p className="text-sm font-medium text-gray-500 mb-2 uppercase tracking-wide">Total Reduced</p>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-5xl font-extrabold text-teal-600">{totalSaved.toFixed(1)}</span>
+              <span className="text-lg text-teal-600">kg CO₂e</span>
+            </div>
+            <span className="mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700">
+              Impact Reductions
+            </span>
+          </div>
         </div>
 
         {/* AI Logger Spanning 2 columns */}
@@ -87,9 +136,43 @@ export const Dashboard = () => {
         </div>
       </div>
 
+      {/* Daily Simple Actions Panel */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8" role="region" aria-label="Simple Actions to Reduce Emissions">
+        <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+          <Leaf className="w-5 h-5 mr-2 text-teal-600" />
+          Simple Daily Actions (One-Click Log)
+        </h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Select actions to instantly log carbon footprint reductions based on your sustainability goals.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {actions.map(action => (
+            <button
+              key={action.id}
+              onClick={() => handleLogReduction(action)}
+              className="flex items-center justify-between p-3.5 bg-teal-50/20 hover:bg-teal-50/60 border border-teal-100 hover:border-teal-200 rounded-xl text-left transition-all group focus:ring-2 focus:ring-teal-500 outline-none"
+              aria-label={`Log simple action reduction: ${action.name} for category ${action.category}`}
+            >
+              <div className="pr-3">
+                <p className="text-sm font-medium text-gray-800 group-hover:text-teal-900 transition-colors">
+                  {action.name}
+                </p>
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+                  {action.category}
+                </span>
+              </div>
+              <div className="shrink-0 bg-teal-600 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg group-hover:scale-105 transition-transform flex items-center space-x-1">
+                <span>-{action.reductionAmount}</span>
+                <PlusCircle className="w-3.5 h-3.5 ml-0.5" />
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Weekly Trend */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200" role="region" aria-label="Weekly emission trend chart">
           <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
             <ActivityIcon className="w-5 h-5 mr-2 text-teal-600" />
             7-Day Trend
@@ -106,7 +189,7 @@ export const Dashboard = () => {
         </div>
 
         {/* Category Breakdown */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200" role="region" aria-label="Emission sources breakdown chart">
           <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
             <PieChart className="w-5 h-5 mr-2 text-teal-600" />
             Emission Sources
@@ -149,7 +232,7 @@ export const Dashboard = () => {
       </div>
 
       {/* Activity History & AI Insights */}
-      <div>
+      <div role="region" aria-label="Recent logged activities log">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
           <Flame className="w-5 h-5 mr-2 text-orange-500" />
           Recent Activities & AI Insights
@@ -168,6 +251,11 @@ export const Dashboard = () => {
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize" style={{backgroundColor: `${COLORS[activity.category as keyof typeof COLORS]}20`, color: COLORS[activity.category as keyof typeof COLORS]}}>
                       {activity.category}
                     </span>
+                    {activity.isReduction && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                        Reduction
+                      </span>
+                    )}
                     <span className="text-xs text-gray-400">{format(new Date(activity.date), 'MMM d, h:mm a')}</span>
                   </div>
                   <p className="text-gray-800 font-medium">{activity.description}</p>
@@ -179,7 +267,9 @@ export const Dashboard = () => {
                   )}
                 </div>
                 <div className="md:text-right shrink-0">
-                  <span className="text-lg font-bold text-gray-900">{activity.carbonAmount}</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {activity.isReduction ? '-' : ''}{activity.carbonAmount}
+                  </span>
                   <span className="text-xs text-gray-500 ml-1">kg CO₂</span>
                 </div>
               </div>

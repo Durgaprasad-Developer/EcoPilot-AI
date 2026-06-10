@@ -35,19 +35,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     init();
   }, []);
 
-  const login = () => {
+  const login = React.useCallback(() => {
     const newUser = authService.loginAnonymously();
     setUser(newUser);
     setActivities([]);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = React.useCallback(() => {
     authService.logout();
     setUser(null);
     setActivities([]);
-  };
+  }, []);
 
-  const completeOnboarding = async (name: string, goals: string[]) => {
+  const completeOnboarding = React.useCallback(async (name: string, goals: string[]) => {
     if (!user) return;
     const updatedUser = { ...user, name, goals };
     await dbService.saveUser(updatedUser);
@@ -57,9 +57,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (typeof window !== 'undefined') {
       localStorage.setItem('ecopilot_current_user', JSON.stringify(updatedUser));
     }
-  };
+  }, [user]);
 
-  const addActivity = async (activityData: Omit<Activity, 'id' | 'userId' | 'date'>) => {
+  const addActivity = React.useCallback(async (activityData: Omit<Activity, 'id' | 'userId' | 'date'>) => {
     if (!user) return;
     
     const newActivity: Activity = {
@@ -71,10 +71,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     await dbService.saveActivity(newActivity);
     setActivities(prev => [newActivity, ...prev]);
-  };
+  }, [user]);
+
+  const value = React.useMemo(() => ({
+    user,
+    activities,
+    loading,
+    login,
+    logout,
+    addActivity,
+    completeOnboarding
+  }), [user, activities, loading, login, logout, addActivity, completeOnboarding]);
 
   return (
-    <AppContext.Provider value={{ user, activities, loading, login, logout, addActivity, completeOnboarding }}>
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );

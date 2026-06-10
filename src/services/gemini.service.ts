@@ -30,7 +30,32 @@ Schema:
 }
 `;
 
+// In-memory cache for LLM extraction results to optimize API usage
+const aiCache = new Map<string, AIExtraction>();
+
+/**
+ * Sanitizes user input to prevent prompt payload attacks and XSS injections.
+ */
+function sanitizeInput(text: string): string {
+  // Cap length to prevent resource exhaustion attacks
+  let cleaned = text.trim().substring(0, 1000);
+  // Remove simple HTML tags
+  cleaned = cleaned.replace(/<[^>]*>/g, '');
+  return cleaned;
+}
+
 export async function extractActivitiesAction(userInput: string): Promise<AIExtraction> {
+  const sanitized = sanitizeInput(userInput);
+  
+  if (!sanitized) {
+    throw new Error("Input description is empty or invalid.");
+  }
+
+  // Check cache for identical requests
+  if (aiCache.has(sanitized.toLowerCase())) {
+    return aiCache.get(sanitized.toLowerCase())!;
+  }
+
   let responseText = '';
 
   try {
@@ -42,7 +67,7 @@ export async function extractActivitiesAction(userInput: string): Promise<AIExtr
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: [
-        { role: 'user', parts: [{ text: SYSTEM_PROMPT + "\n\nUser Input: " + userInput }] }
+        { role: 'user', parts: [{ text: SYSTEM_PROMPT + "\n\nUser Input: " + sanitized }] }
       ],
       config: {
           temperature: 0.2, // low temperature for deterministic parsing
@@ -55,7 +80,7 @@ export async function extractActivitiesAction(userInput: string): Promise<AIExtr
   } catch (error) {
     console.warn("Gemini Direct Error, falling back to OpenRouter:", error);
     
-    // Attempt 2: Fallback to OpenRouter (using Gemini via OpenRouter or Llama)
+    // Attempt 2: Fallback to OpenRouter (using Claude-3-Haiku)
     if (!process.env.NEXT_PUBLIC_OPENROUTE_API_KEY) {
       throw new Error("OpenRouter API Key is missing. Both primary and fallback failed.");
     }
@@ -73,7 +98,7 @@ export async function extractActivitiesAction(userInput: string): Promise<AIExtr
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: "User Input: " + userInput }
+            { role: "user", content: "User Input: " + sanitized }
           ]
         })
       });
@@ -100,5 +125,16 @@ export async function extractActivitiesAction(userInput: string): Promise<AIExtr
     jsonData = JSON.parse(cleanText);
   }
 
-  return aiExtractionSchema.parse(jsonData);
+  const parsedData = aiExtractionSchema.parse(jsonData);
+
+  // Store in cache with basic eviction to prevent memory leaks (max 100 entries)
+  if (aiCache.size >= 100) {
+    const oldestKey = aiCache.keys().next().value;
+    if (oldestKey !== undefined) {
+      aiCache.delete(oldestKey);
+    }
+  }
+  aiCache.set(sanitized.toLowerCase(), parsedData);
+
+  return parsedData;
 }

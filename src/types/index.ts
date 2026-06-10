@@ -8,6 +8,7 @@ export interface Activity {
   carbonAmount: number; // in kg CO2e
   date: string; // ISO string
   aiInsight?: string;
+  isReduction?: boolean;
 }
 
 export interface UserProfile {

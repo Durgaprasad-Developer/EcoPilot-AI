@@ -5,7 +5,8 @@ export const activitySchema = z.object({
   category: z.enum(['transport', 'food', 'energy', 'shopping', 'other']),
   carbonAmount: z.number().min(0, "Carbon amount must be positive"),
   date: z.string().datetime(),
-  aiInsight: z.string().optional()
+  aiInsight: z.string().optional(),
+  isReduction: z.boolean().optional()
 });
 
 export const aiExtractionSchema = z.object({
