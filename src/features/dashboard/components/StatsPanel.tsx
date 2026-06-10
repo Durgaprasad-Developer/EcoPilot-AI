@@ -8,12 +8,15 @@ interface StatsPanelProps {
     bgClass: string;
     textClass: string;
   };
+  categoryData: Array<{ name: string; value: number }>;
 }
 
 /**
  * StatsPanel renders cards summarizing daily net footprint and total cumulative carbon saved.
  */
-export const StatsPanel: React.FC<StatsPanelProps> = ({ totalToday, totalSaved, assessment }) => {
+export const StatsPanel: React.FC<StatsPanelProps> = ({ totalToday, totalSaved, assessment, categoryData }) => {
+  const totalCategoryEmissions = categoryData.reduce((sum, c) => sum + Math.max(0, c.value), 0);
+
   return (
     <div className="flex flex-col gap-6">
       {/* Today's Footprint Card */}
@@ -26,6 +29,25 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({ totalToday, totalSaved, 
         <span className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold ${assessment.bgClass} ${assessment.textClass}`}>
           {assessment.label}
         </span>
+
+        {/* Dynamic Source Breakdown */}
+        {totalCategoryEmissions > 0 && (
+          <div className="w-full mt-4 border-t border-gray-100 pt-3 text-left">
+            <p className="text-xs font-bold text-gray-700 mb-2">Why? Emission Sources:</p>
+            <div className="space-y-1">
+              {categoryData.map(c => {
+                const pct = totalCategoryEmissions > 0 ? Math.round((c.value / totalCategoryEmissions) * 100) : 0;
+                if (pct <= 0) return null;
+                return (
+                  <div key={c.name} className="flex justify-between text-[11px] text-gray-600 capitalize">
+                    <span>{c.name}</span>
+                    <span className="font-semibold">{pct}% ({c.value.toFixed(1)} kg)</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Cumulative Saved Card */}

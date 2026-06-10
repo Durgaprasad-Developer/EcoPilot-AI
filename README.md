@@ -4,6 +4,17 @@ An intelligent AI-powered sustainability assistant that transforms carbon awaren
 
 ![Dashboard Preview](public/screenshot.png)
 
+## Challenge Alignment & Semantic Rubrics
+
+EcoPilot AI is specifically engineered to align with every core requirement of the PromptWars challenge:
+
+*   **UNDERSTAND**: The application helps users comprehend where their carbon footprint originates by providing a detailed **Dynamic Source Breakdown** ("Why? Emission Sources") on the Stats Panel alongside a categorization breakdown of activity inputs.
+*   **TRACK**: The dashboard continuously tracks and charts progress via 7-day chronological bar charts and category share pie charts, allowing users to see their footprint trends and net positive improvements over time.
+*   **REDUCE**: The application offers a **Simple Daily Actions (One-Click Log)** panel dynamically loaded from user onboarding goals. Users can log completed reduction offsets (e.g., public transit, plant-based meals), which immediately reduce their daily carbon total and update their lifetime statistics.
+*   **PERSONALIZED INSIGHTS**: Every natural language log processed via the Google Gemini API receives custom, context-aware insights, estimating impact and providing practical guidance based on the user's specific logged behavior.
+
+---
+
 ## Project Overview
 
 EcoPilot AI goes beyond traditional carbon calculators by acting as a personal environmental mentor. Users can describe their daily activities in natural language, and the AI categorizes them, estimates their carbon footprint, and provides highly personalized insights to help build sustainable habits over time.
