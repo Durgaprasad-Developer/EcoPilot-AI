@@ -1,33 +1,16 @@
 'use client';
 
 import React from 'react';
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { format } from 'date-fns';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
+import { DashboardHeader } from './components/DashboardHeader';
+import { StatsPanel } from './components/StatsPanel';
+import { SimpleActionsPanel } from './components/SimpleActionsPanel';
+import { AnalyticsPanel } from './components/AnalyticsPanel';
+import { ActivitiesHistoryPanel } from './components/ActivitiesHistoryPanel';
 import { ActivityLogger } from '../logger/ActivityLogger';
-import { Leaf, Flame, Activity as ActivityIcon, Sparkles, PlusCircle, Loader2 } from 'lucide-react';
-
-// Color themes mapped for WCAG AA compliance (4.5:1 contrast text-on-bg ratio)
-const COLORS = {
-  transport: { text: '#0369a1', bg: '#e0f2fe' }, // sky-700, sky-100
-  food: { text: '#b45309', bg: '#fef3c7' }, // amber-700, amber-100
-  energy: { text: '#6d28d9', bg: '#ede9fe' }, // violet-700, violet-100
-  shopping: { text: '#be185d', bg: '#fce7f3' }, // pink-700, pink-100
-  other: { text: '#334155', bg: '#f1f5f9' } // slate-700, slate-100
-};
-
-// Static chart colors (visual display only)
-const CHART_COLORS = {
-  transport: '#0ea5e9', // sky-500
-  food: '#f59e0b', // amber-500
-  energy: '#8b5cf6', // violet-500
-  shopping: '#ec4899', // pink-500
-  other: '#94a3b8' // slate-400
-};
 
 /**
- * Dashboard component displays sustainability statistics, trends, simple action shortcuts, and logging features.
- * This is a presentation-only component driven by the useDashboardStats hook.
+ * Dashboard component orchestrates isolated presentation-only sub-components driven by the useDashboardStats hook.
  */
 export const Dashboard: React.FC = () => {
   const {
@@ -46,211 +29,33 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <header className="flex justify-between items-center mb-8" role="banner">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hello, {user?.name}</h1>
-          <p className="text-gray-600">Track and reduce your environmental impact.</p>
-        </div>
-        <button 
-          onClick={logout} 
-          className="text-sm font-medium text-teal-600 hover:text-teal-800 transition-colors focus:ring-2 focus:ring-teal-500 outline-none rounded p-1"
-          aria-label="Switch current user profile"
-        >
-          Switch Profile
-        </button>
-      </header>
+      <DashboardHeader userName={user?.name} onLogout={logout} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Today's Score and Saved Metrics */}
-        <div className="flex flex-col gap-6">
-          {/* Today's Footprint Card */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center items-center flex-1" role="region" aria-label="Today's Footprint Status">
-            <p className="text-sm font-medium text-gray-500 mb-2 uppercase tracking-wide">Today&apos;s Footprint</p>
-            <div className="flex items-baseline space-x-2">
-              <span className="text-5xl font-extrabold text-gray-900">{totalToday.toFixed(1)}</span>
-              <span className="text-lg text-gray-500">kg CO₂e</span>
-            </div>
-            <span className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 ${assessment.color}`}>
-              {assessment.label}
-            </span>
-          </div>
-
-          {/* Cumulative Saved Card */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center items-center flex-1" role="region" aria-label="Cumulative Carbon Saved">
-            <p className="text-sm font-medium text-gray-500 mb-2 uppercase tracking-wide">Total Reduced</p>
-            <div className="flex items-baseline space-x-2">
-              <span className="text-5xl font-extrabold text-teal-600">{totalSaved.toFixed(1)}</span>
-              <span className="text-lg text-teal-600">kg CO₂e</span>
-            </div>
-            <span className="mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700">
-              Impact Reductions
-            </span>
-          </div>
-        </div>
-
-        {/* AI Logger Spanning 2 columns */}
+        <StatsPanel 
+          totalToday={totalToday} 
+          totalSaved={totalSaved} 
+          assessment={assessment} 
+        />
         <div className="md:col-span-2">
           <ActivityLogger />
         </div>
       </div>
 
-      {/* Daily Simple Actions Panel */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8" role="region" aria-label="Simple Actions to Reduce Emissions">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
-          <Leaf className="w-5 h-5 mr-2 text-teal-600" />
-          Simple Daily Actions (One-Click Log)
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Select actions to instantly log carbon footprint reductions based on your sustainability goals.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {actions.map(action => {
-            const isLogging = activeLoggingId === action.id;
-            return (
-              <button
-                key={action.id}
-                onClick={() => handleLogReduction(action)}
-                disabled={activeLoggingId !== null}
-                className="flex items-center justify-between p-3.5 bg-teal-50/20 hover:bg-teal-50/60 border border-teal-100 hover:border-teal-200 rounded-xl text-left transition-all group focus:ring-2 focus:ring-teal-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label={`Log simple action reduction: ${action.name} for category ${action.category}`}
-              >
-                <div className="pr-3">
-                  <p className="text-sm font-medium text-gray-800 group-hover:text-teal-900 transition-colors">
-                    {action.name}
-                  </p>
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
-                    {action.category}
-                  </span>
-                </div>
-                <div className="shrink-0 bg-teal-600 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg group-hover:scale-105 transition-transform flex items-center space-x-1">
-                  {isLogging ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <>
-                      <span>-{action.reductionAmount}</span>
-                      <PlusCircle className="w-3.5 h-3.5 ml-0.5" />
-                    </>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <SimpleActionsPanel 
+        actions={actions} 
+        activeLoggingId={activeLoggingId} 
+        onLogReduction={handleLogReduction} 
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* Weekly Trend */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200" role="region" aria-label="Weekly emission trend chart">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-            <ActivityIcon className="w-5 h-5 mr-2 text-teal-600" />
-            7-Day Trend
-          </h3>
-          <div className="h-64 w-full" style={{ minHeight: 250, minWidth: 200 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyData}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                <Bar dataKey="amount" fill="#0d9488" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      <AnalyticsPanel 
+        weeklyData={weeklyData} 
+        categoryData={categoryData} 
+      />
 
-        {/* Category Breakdown */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200" role="region" aria-label="Emission sources breakdown chart">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-            <PieChart className="w-5 h-5 mr-2 text-teal-600" />
-            Emission Sources
-          </h3>
-          <div className="h-64 flex items-center justify-center w-full" style={{ minHeight: 250, minWidth: 200 }}>
-            {categoryData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={CHART_COLORS[entry.name as keyof typeof CHART_COLORS] || CHART_COLORS.other} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-gray-400 text-sm">No data yet. Log an activity!</p>
-            )}
-          </div>
-          
-          {/* Legend */}
-          <div className="flex flex-wrap justify-center gap-3 mt-2">
-            {categoryData.map(c => (
-              <div key={c.name} className="flex items-center text-xs text-gray-600 capitalize">
-                <span className="w-3 h-3 rounded-full mr-1.5" style={{backgroundColor: CHART_COLORS[c.name as keyof typeof CHART_COLORS] || CHART_COLORS.other}}></span>
-                {c.name}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Activity History & AI Insights */}
-      <div role="region" aria-label="Recent logged activities log">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-          <Flame className="w-5 h-5 mr-2 text-orange-500" />
-          Recent Activities & AI Insights
-        </h3>
-        <div className="space-y-4">
-          {activities.length === 0 ? (
-            <div className="bg-white p-8 text-center rounded-xl border border-gray-200">
-              <Leaf className="w-10 h-10 text-teal-200 mx-auto mb-3" />
-              <p className="text-gray-500">Your journey starts here. Log your first activity above.</p>
-            </div>
-          ) : (
-            activities.slice(0, 10).map(activity => {
-              const theme = COLORS[activity.category as keyof typeof COLORS] || COLORS.other;
-              return (
-                <div key={activity.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-start gap-4 hover:shadow-md transition-shadow">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span 
-                        className="px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize" 
-                        style={{ backgroundColor: theme.bg, color: theme.text }}
-                      >
-                        {activity.category}
-                      </span>
-                      {activity.isReduction && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                          Reduction
-                        </span>
-                      )}
-                      <span className="text-xs text-gray-400">{format(new Date(activity.date), 'MMM d, h:mm a')}</span>
-                    </div>
-                    <p className="text-gray-800 font-medium">{activity.description}</p>
-                    {activity.aiInsight && (
-                      <div className="mt-3 p-3 bg-teal-50/50 rounded-lg border border-teal-100 flex items-start space-x-2">
-                        <Sparkles className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />
-                        <p className="text-sm text-teal-800 leading-relaxed">{activity.aiInsight}</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="md:text-right shrink-0">
-                    <span className="text-lg font-bold text-gray-900">
-                      {activity.isReduction ? '-' : ''}{activity.carbonAmount}
-                    </span>
-                    <span className="text-xs text-gray-500 ml-1">kg CO₂</span>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
+      <ActivitiesHistoryPanel 
+        activities={activities} 
+      />
     </div>
   );
 };

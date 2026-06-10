@@ -1,7 +1,12 @@
 import { useMemo, useState, useCallback } from 'react';
-import { isSameDay, subDays, format } from 'date-fns';
 import { useAppContext } from '../context/AppContext';
 import { carbonService, type SimpleAction } from '../services/carbon.service';
+import {
+  calculateTotalToday,
+  calculateTotalSaved,
+  calculateWeeklyData,
+  calculateCategoryData
+} from '../utils/dashboard.utils';
 
 /**
  * Custom hook encapsulating calculations, daily assessments, and handlers for the sustainability dashboard.
@@ -15,54 +20,16 @@ export function useDashboardStats() {
     return carbonService.getActionsForGoals(user?.goals || []);
   }, [user?.goals]);
 
-  // Aggregate stats: today's net footprint, cumulative saved, weekly trends, and categories
-  const stats = useMemo(() => {
-    const today = new Date();
-    
-    // Net daily carbon amount (adding emissions, subtracting offset reductions)
-    const totalToday = activities
-      .filter(a => isSameDay(new Date(a.date), today))
-      .reduce((sum, a) => sum + (a.isReduction ? -a.carbonAmount : a.carbonAmount), 0);
-
-    // Cumulative carbon saved through reductions
-    const totalSaved = activities
-      .filter(a => a.isReduction)
-      .reduce((sum, a) => sum + a.carbonAmount, 0);
-
-    // Data for the 7-day trend visualization
-    const weeklyData = Array.from({ length: 7 }).map((_, i) => {
-      const d = subDays(today, 6 - i);
-      const dayTotal = activities
-        .filter(a => isSameDay(new Date(a.date), d))
-        .reduce((sum, a) => sum + (a.isReduction ? -a.carbonAmount : a.carbonAmount), 0);
-      return {
-        name: format(d, 'EEE'),
-        amount: Number(dayTotal.toFixed(1))
-      };
-    });
-
-    // Carbon emissions grouped by category
-    const categoryTotals = activities.reduce((acc, a) => {
-      const amount = a.isReduction ? -a.carbonAmount : a.carbonAmount;
-      acc[a.category] = (acc[a.category] || 0) + amount;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const categoryData = Object.entries(categoryTotals)
-      .map(([name, value]) => ({
-        name,
-        value: Number(value.toFixed(1))
-      }))
-      .filter(item => item.value > 0)
-      .sort((a, b) => b.value - a.value);
-
-    return { totalToday, totalSaved, weeklyData, categoryData };
-  }, [activities]);
+  // Aggregate stats using isolated, testable utility helpers
+  const totalToday = useMemo(() => calculateTotalToday(activities), [activities]);
+  const totalSaved = useMemo(() => calculateTotalSaved(activities), [activities]);
+  const weeklyData = useMemo(() => calculateWeeklyData(activities), [activities]);
+  const categoryData = useMemo(() => calculateCategoryData(activities), [activities]);
 
   // Daily eco-standing classification
   const assessment = useMemo(() => {
-    return carbonService.getDailyAssessment(stats.totalToday);
-  }, [stats.totalToday]);
+    return carbonService.getDailyAssessment(totalToday);
+  }, [totalToday]);
 
   // Callback to log a habit reduction action
   const handleLogReduction = useCallback(async (action: SimpleAction) => {
@@ -86,10 +53,10 @@ export function useDashboardStats() {
     activities,
     logout,
     actions,
-    totalToday: stats.totalToday,
-    totalSaved: stats.totalSaved,
-    weeklyData: stats.weeklyData,
-    categoryData: stats.categoryData,
+    totalToday,
+    totalSaved,
+    weeklyData,
+    categoryData,
     assessment,
     activeLoggingId,
     handleLogReduction
