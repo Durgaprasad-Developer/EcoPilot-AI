@@ -94,7 +94,7 @@ export const Dashboard = () => {
             <ActivityIcon className="w-5 h-5 mr-2 text-teal-600" />
             7-Day Trend
           </h3>
-          <div className="h-64">
+          <div className="h-64 w-full" style={{ minHeight: 250, minWidth: 200 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyData}>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
@@ -111,7 +111,7 @@ export const Dashboard = () => {
             <PieChart className="w-5 h-5 mr-2 text-teal-600" />
             Emission Sources
           </h3>
-          <div className="h-64 flex items-center justify-center">
+          <div className="h-64 flex items-center justify-center w-full" style={{ minHeight: 250, minWidth: 200 }}>
             {categoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
