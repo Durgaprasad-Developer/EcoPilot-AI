@@ -35,7 +35,7 @@ export const Onboarding: React.FC = () => {
   return (
     <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-xl shadow-lg border border-gray-100" role="main">
       <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome to EcoPilot AI</h1>
-      <p className="text-gray-600 mb-6">Let&apos;s set up your personal sustainability profile.</p>
+      <p className="text-gray-600 mb-6">Let&apos;s set up your personalized profile to understand, track, and reduce your carbon footprint.</p>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -91,7 +91,7 @@ export const Onboarding: React.FC = () => {
           disabled={!name.trim()}
           className="w-full bg-teal-600 text-white font-semibold py-3 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 outline-none"
         >
-          Start Tracking
+          Start tracking & reducing emissions
         </button>
       </form>
     </div>

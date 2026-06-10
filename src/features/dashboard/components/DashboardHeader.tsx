@@ -13,7 +13,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName, onLo
     <header className="flex justify-between items-center mb-8" role="banner">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Hello, {userName}</h1>
-        <p className="text-gray-600">Track and reduce your environmental impact.</p>
+        <p className="text-gray-600">Understand, track, and reduce your carbon footprint through simple actions and personalized insights.</p>
       </div>
       <button 
         onClick={onLogout} 

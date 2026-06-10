@@ -64,11 +64,11 @@ export const ActivityLogger: React.FC = () => {
 
       <div className="flex items-center space-x-2 mb-4">
         <Sparkles className="w-5 h-5 text-teal-500" />
-        <h2 className="text-lg font-semibold text-gray-800">AI Activity Logger</h2>
+        <h2 className="text-lg font-semibold text-gray-800">Track emissions with AI logger</h2>
       </div>
       
       <p className="text-sm text-gray-600 mb-4" id="logger-instructions">
-        Describe what you did today in natural language. I&apos;ll automatically categorize and estimate the carbon footprint.
+        Describe what you did today in natural language. I&apos;ll automatically categorize, estimate the carbon footprint, and generate personalized AI insights to help you reduce emissions.
       </p>
 
       <form onSubmit={handleSubmit} className="relative">
